@@ -1,0 +1,4 @@
+= Hide Members Box
+
+Adds a "View members box" permission (which is off by default) to view or hide
+the members box on the project overview screen.
