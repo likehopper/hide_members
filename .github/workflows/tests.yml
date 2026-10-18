@@ -1,0 +1,99 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  redmine-tests:
+    name: Redmine ${{ matrix.redmine }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - redmine: 5.1
+            ref: 5.1-stable
+          - redmine: 6.1
+            ref: 6.1-stable
+          - redmine: 7.0
+            ref: 7.0-stable
+
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: redmine
+          MARIADB_DATABASE: redmine_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Check out plugin
+        uses: actions/checkout@v4
+        with:
+          path: hide_members
+
+      - name: Check out Redmine
+        uses: actions/checkout@v4
+        with:
+          repository: redmine/redmine
+          ref: ${{ matrix.ref }}
+          path: redmine
+          persist-credentials: false
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            libmariadb-dev libmagickwand-dev libxml2-dev libxslt1-dev
+
+      - name: Configure test database adapter
+        working-directory: redmine
+        run: |
+          cat > config/database.yml <<'YAML'
+          test:
+            adapter: mysql2
+            database: redmine_test
+            host: 127.0.0.1
+            username: root
+            password: redmine
+            encoding: utf8mb4
+          YAML
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: redmine
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install plugin
+        run: |
+          mkdir -p redmine/plugins/hide_members
+          rsync -a --exclude=.git hide_members/ redmine/plugins/hide_members/
+
+      - name: Prepare test database
+        working-directory: redmine
+        run: RAILS_ENV=test bundle exec rake db:create db:migrate
+
+      - name: Run unit, functional and integration tests
+        working-directory: redmine
+        run: |
+          bundle exec ruby -Itest plugins/hide_members/test/unit/hide_members_permission_test.rb
+          bundle exec ruby -Itest plugins/hide_members/test/functional/projects_controller_test.rb
+          bundle exec ruby -Itest plugins/hide_members/test/integration/projects_test.rb
+
+      - name: Run system tests
+        working-directory: redmine
+        env:
+          GOOGLE_CHROME_OPTS_ARGS: --headless=new,--no-sandbox,--disable-dev-shm-usage
+        run: bundle exec ruby -Itest plugins/hide_members/test/system/projects_test.rb

@@ -3,7 +3,15 @@
   <div class="members box">
     <h3 class="icon icon-group"><%=l(:label_member_plural)%></h3>
     <% @principals_by_role.keys.sort.each do |role| %>
-      <p><span class="label"><%= role %>:</span> <%= @principals_by_role[role].sort.collect{|p| link_to_principal(p, :class => p.is_a?(Group) ? 'icon icon-group' : nil)}.join(", ").html_safe %></p>
+      <p><span class="label"><%= role %>:</span> <%= @principals_by_role[role].sort.collect do |principal|
+        if respond_to?(:link_to_principal)
+          link_to_principal(principal, :class => principal.is_a?(Group) ? 'icon icon-group' : nil)
+        elsif principal.is_a?(Group)
+          content_tag(:span, link_to_group(principal), :class => 'icon icon-group')
+        else
+          link_to_user(principal)
+        end
+      end.join(", ").html_safe %></p>
     <% end %>
   </div>
   <% end %>

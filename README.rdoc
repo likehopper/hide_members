@@ -1,4 +1,29 @@
 = Hide Members Box
 
 Adds a "View members box" permission (which is off by default) to view or hide
-the members box on the project overview screen.
+the members box on the project overview screen. The members list supports
+Redmine 4.2 and later.
+
+== Installation
+
+Install this plugin in Redmine's @plugins/hide_members@ directory, then restart
+Redmine.
+
+== Configuration
+
+Open *Administration > Roles and permissions*, select a role, and enable
+*View members box* to show the box to users with that role. The permission is
+disabled by default. It only controls the members box on the project overview;
+it does not change access to project membership information elsewhere in
+Redmine.
+
+== Tests
+
+The test suite is run against Redmine 5.1, 6.1 and 7.0 in GitHub Actions. To
+run a test locally, install this plugin in a Redmine checkout and run the
+corresponding command from the Redmine root:
+
+* Unit: @bundle exec ruby -Itest plugins/hide_members/test/unit/hide_members_permission_test.rb@
+* Functional: @bundle exec ruby -Itest plugins/hide_members/test/functional/projects_controller_test.rb@
+* Integration: @bundle exec ruby -Itest plugins/hide_members/test/integration/projects_test.rb@
+* System (requires a configured browser): @bundle exec ruby -Itest plugins/hide_members/test/system/projects_test.rb@
