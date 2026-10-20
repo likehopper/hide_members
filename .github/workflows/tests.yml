@@ -35,12 +35,12 @@ jobs:
 
     steps:
       - name: Check out plugin
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: hide_members
 
       - name: Check out Redmine
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: redmine/redmine
           ref: ${{ matrix.ref }}
@@ -74,7 +74,7 @@ jobs:
           working-directory: redmine
 
       - name: Install Chrome
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@v2
 
       - name: Install plugin
         run: |
